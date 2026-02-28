@@ -75,6 +75,10 @@
         margin-bottom: 15px;
     }
 
+    .modal-header-controls .expense-btn {
+        margin-left: 10px;
+    }
+
     .back-btn {
         display: inline-block;
         width: auto;
@@ -86,6 +90,7 @@
     .right {
         width: 60%;
         padding: 20px;
+        font-variant-numeric: tabular-nums; /* 숫자 정렬을 위해 추가 */
     }
 
     .right h2 {
@@ -202,7 +207,7 @@
     
     .detail-item button,
     .modal-header-controls .expense-btn {
-        padding: 2px 5px;
+        padding: 5px 8px;
         font-size: 12px;
         width: auto;
     }
@@ -236,6 +241,15 @@
         .month > span:first-child,
         .yearly-total > span:first-child {
             grid-column: 1 / -1;
+            text-align: center;
+        }
+        
+        /* 수입/지출은 각 열에서 가운데 정렬 */
+        .month > span:nth-child(2),
+        .yearly-total > span:nth-child(2),
+        .month > span:nth-child(3),
+        .yearly-total > span:nth-child(3) {
+            text-align: center;
         }
 
         .month > .total,
@@ -318,8 +332,23 @@
     const incomeAmountInput = document.getElementById('income-amount');
     const expenseAmountInput = document.getElementById('expense-amount');
 
-    dateInput.value = new Date().toISOString().slice(0, 10);
     let data = JSON.parse(localStorage.getItem("household")) || [];
+
+    function setDateToToday() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = (now.getMonth() + 1).toString().padStart(2, '0');
+        const day = now.getDate().toString().padStart(2, '0');
+        dateInput.value = `${year}-${month}-${day}`;
+    }
+
+    // 페이지를 열 때, 그리고 다른 탭에 갔다가 돌아올 때 날짜를 오늘로 설정합니다.
+    setDateToToday();
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            setDateToToday();
+        }
+    });
 
     incomeAmountInput.addEventListener('keydown', e => e.key === 'Enter' && addTransaction('income'));
     expenseAmountInput.addEventListener('keydown', e => e.key === 'Enter' && addTransaction('expense'));
@@ -363,6 +392,21 @@
         showDetails(month);
     }
 
+    function deleteMonthlyData(month, type) {
+        const typeText = type === 'income' ? '수입' : '지출';
+        if (!confirm(`${month + 1}월의 모든 ${typeText} 내역을 삭제하시겠습니까?`)) return;
+
+        data = data.filter(item => {
+            const itemMonth = new Date(item.date).getMonth();
+            return !(itemMonth === month && item.type === type);
+        });
+
+        localStorage.setItem("household", JSON.stringify(data));
+        
+        render();
+        showDetails(month); // 모달을 닫는 대신, 상세 내역을 새로고침합니다.
+    }
+
     function render() {
         let monthlySummaries = Array(12).fill(null).map(() => ({ income: 0, expense: 0, total: 0 }));
         let totalIncome = 0;
@@ -375,23 +419,28 @@
 
         let html = "";
         for (let i = 0; i < 12; i++) {
-            monthlySummaries[i].total = monthlySummaries[i].income - monthlySummaries[i].expense;
-            totalIncome += monthlySummaries[i].income;
-            totalExpense += monthlySummaries[i].expense;
+            const summary = monthlySummaries[i];
+            summary.total = summary.income - summary.expense;
+            totalIncome += summary.income;
+            totalExpense += summary.expense;
+            
+            const totalColor = summary.total < 0 ? 'red' : 'black';
+
             html += `<div class="month" onclick="showDetails(${i})">
                         <span>${i + 1}월</span>
-                        <span style="color:blue;">+${monthlySummaries[i].income.toLocaleString()}</span>
-                        <span style="color:red;">-${monthlySummaries[i].expense.toLocaleString()}</span>
-                        <span class="total">= ${monthlySummaries[i].total.toLocaleString()} 원</span>
+                        <span style="color:blue;">+${summary.income.toLocaleString()}</span>
+                        <span style="color:red;">-${summary.expense.toLocaleString()}</span>
+                        <span class="total" style="color:${totalColor};">= ${summary.total.toLocaleString()} 원</span>
                      </div>`;
         }
 
         const grandTotal = totalIncome - totalExpense;
+        const grandTotalColor = grandTotal < 0 ? 'red' : 'black';
         html += `<div class="yearly-total">
                      <span>총합계</span>
                      <span style="color:blue;">+${totalIncome.toLocaleString()}</span>
                      <span style="color:red;">-${totalExpense.toLocaleString()}</span>
-                     <span class="total">= ${grandTotal.toLocaleString()} 원</span>
+                     <span class="total" style="color:${grandTotalColor};">= ${grandTotal.toLocaleString()} 원</span>
                   </div>`;
 
         document.getElementById("monthList").innerHTML = html;
@@ -399,6 +448,8 @@
     
     function showDetails(month) {
         const monthData = data.filter(item => new Date(item.date).getMonth() === month);
+        const hasIncome = monthData.some(item => item.type === 'income');
+        const hasExpense = monthData.some(item => item.type === 'expense');
 
         const dailySummary = {};
         monthData.forEach(item => {
@@ -412,8 +463,20 @@
         const modalBody = document.getElementById("modalBody");
         modalTitle.innerText = `${month + 1}월 상세 내역`;
 
+        let headerHtml = `<div class="modal-header-controls" style="justify-content: flex-end; margin-bottom: 20px;">`;
+        if (hasIncome) {
+            headerHtml += `<button class="expense-btn" style="background-color: #1E90FF;" onclick="deleteMonthlyData(${month}, 'income')">이 달의 모든 수입 삭제</button>`;
+        }
+        if (hasExpense) {
+            headerHtml += `<button class="expense-btn" onclick="deleteMonthlyData(${month}, 'expense')">이 달의 모든 지출 삭제</button>`;
+        }
+        headerHtml += `</div>`;
+
         let bodyHtml = `<div class="detail-item detail-header">
-                          <span>날짜</span><span>수입/지출</span>
+                          <span>날짜</span>
+                          <span style="text-align:center;">수입</span>
+                          <span style="text-align:center;">지출</span>
+                          <span style="text-align:right;">일일 합계</span>
                       </div>`;
 
         const sortedDates = Object.keys(dailySummary).sort();
@@ -424,16 +487,22 @@
             sortedDates.forEach(date => {
                 const day = dailySummary[date];
                 const total = day.income - day.expense;
+                const totalColor = total < 0 ? 'red' : 'black';
                 bodyHtml += `<div class="detail-item">
                                 <span>${date}</span>
-                                <span style="color:blue;" class="clickable-amount" onclick="showTransactionDetails('${date}', 'income', ${month})">+${day.income.toLocaleString()}원</span>
-                                <span style="color:red;" class="clickable-amount" onclick="showTransactionDetails('${date}', 'expense', ${month})">-${day.expense.toLocaleString()}원</span>
-                                <span style="font-weight:bold;">${total.toLocaleString()}원</span>
+                                <span style="color:blue; text-align:center;" class="clickable-amount" onclick="showTransactionDetails('${date}', 'income', ${month})">+${day.income.toLocaleString()}원</span>
+                                <span style="color:red; text-align:center;" class="clickable-amount" onclick="showTransactionDetails('${date}', 'expense', ${month})">-${day.expense.toLocaleString()}원</span>
+                                <span style="font-weight:bold; text-align:right; color:${totalColor};">${total.toLocaleString()}원</span>
                              </div>`;
             });
         }
         
-        modalBody.innerHTML = bodyHtml;
+        if (hasIncome || hasExpense) {
+            modalBody.innerHTML = headerHtml + bodyHtml;
+        } else {
+            modalBody.innerHTML = bodyHtml;
+        }
+        
         document.getElementById("detailsModal").style.display = "block";
     }
 
