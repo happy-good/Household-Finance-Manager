@@ -92,17 +92,41 @@
         text-align: center;
     }
 
-    .month {
+    .month,
+    .yearly-total {
+        display: grid;
+        grid-template-columns: 60px 1fr 1fr auto;
+        gap: 0 10px;
+        align-items: center;
         padding: 8px;
         border-bottom: 1px solid #ddd;
         font-size: 18px;
-        cursor: pointer;
-        display: flex;
-        justify-content: space-between;
-        flex-wrap: wrap; /* 모바일에서 줄바꿈 허용 */
     }
+
+    .month {
+        cursor: pointer;
+    }
+
     .month:hover {
         background-color: #eee;
+    }
+    
+    /* 수입/지출은 가운데 정렬 */
+    .month > span:nth-child(2),
+    .month > span:nth-child(3),
+    .yearly-total > span:nth-child(2),
+    .yearly-total > span:nth-child(3) {
+        text-align: center;
+    }
+
+    /* 월, 합계는 각자의 위치 유지 */
+    .month > span:first-child,
+    .yearly-total > span:first-child {
+        text-align: left;
+    }
+    .month > span:last-child,
+    .yearly-total > span:last-child {
+        text-align: right;
     }
 
     .total {
@@ -111,14 +135,11 @@
     
     .yearly-total {
         margin-top: 10px;
-        padding: 12px 8px;
         border-top: 2px solid #333;
         font-size: 20px;
         font-weight: bold;
-        display: flex;
-        justify-content: space-between;
         background-color: #e8e8e8;
-        flex-wrap: wrap; /* 모바일에서 줄바꿈 허용 */
+        border-bottom: none;
     }
 
     /* 모달 스타일 */
@@ -207,6 +228,17 @@
         .month,
         .yearly-total {
             font-size: 16px;
+            grid-template-columns: 1fr 1fr; /* 2열 레이아웃으로 변경 */
+            row-gap: 5px;
+        }
+
+        .month > .total,
+        .yearly-total > .total {
+            grid-column: 1 / -1; /* 합계는 한 줄 전체 차지 */
+            text-align: right;
+            padding-top: 5px;
+            margin-top: 5px;
+            border-top: 1px solid #eee;
         }
 
         .modal-content {
