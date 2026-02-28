@@ -2,13 +2,14 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>간단 가계부</title>
 <style>
     body {
         font-family: Arial, sans-serif;
         display: flex;
         margin: 0;
-        height: 100vh;
+        min-height: 100vh;
     }
 
     /* 왼쪽 입력 영역 */
@@ -98,6 +99,7 @@
         cursor: pointer;
         display: flex;
         justify-content: space-between;
+        flex-wrap: wrap; /* 모바일에서 줄바꿈 허용 */
     }
     .month:hover {
         background-color: #eee;
@@ -116,6 +118,7 @@
         display: flex;
         justify-content: space-between;
         background-color: #e8e8e8;
+        flex-wrap: wrap; /* 모바일에서 줄바꿈 허용 */
     }
 
     /* 모달 스타일 */
@@ -181,6 +184,50 @@
         padding: 2px 5px;
         font-size: 12px;
         width: auto;
+    }
+    
+    /* 반응형 스타일 */
+    @media (max-width: 768px) {
+        body {
+            flex-direction: column;
+            height: auto;
+        }
+
+        .left,
+        .right {
+            width: 100%;
+            box-sizing: border-box;
+            border-right: none;
+        }
+
+        .right {
+            border-top: 2px solid #ddd;
+        }
+        
+        .month,
+        .yearly-total {
+            font-size: 16px;
+        }
+
+        .modal-content {
+            width: 90%;
+            margin: 20% auto;
+            padding: 15px;
+        }
+        
+        .detail-item {
+            grid-template-columns: 1fr 1fr; /* 2열로 변경 */
+            gap: 15px;
+        }
+
+        .detail-item span:nth-child(3) { /* 지출 */
+             grid-column: 2;
+        }
+        .detail-item span:nth-child(4) { /* 합계 */
+            grid-column: 1 / -1; /* 한 줄 전체 차지 */
+            text-align: right;
+            font-size: 18px;
+        }
     }
 
 </style>
@@ -328,7 +375,7 @@
         modalTitle.innerText = `${month + 1}월 상세 내역`;
 
         let bodyHtml = `<div class="detail-item detail-header">
-                          <span>날짜</span><span>수입</span><span>지출</span><span>합계</span>
+                          <span>날짜</span><span>수입/지출</span>
                       </div>`;
 
         const sortedDates = Object.keys(dailySummary).sort();
