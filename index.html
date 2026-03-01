@@ -1,328 +1,52 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>간단 가계부</title>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        display: flex;
-        margin: 0;
-        min-height: 100vh;
-    }
-
-    /* 왼쪽 입력 영역 */
-    .left {
-        width: 40%;
-        padding: 20px;
-        background: #f4f4f4;
-        border-right: 2px solid #ddd;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .left h2, .left h3 {
-        text-align: center;
-        margin-top: 0;
-    }
-
-    .input-section {
-        margin-bottom: 20px;
-    }
-
-    input {
-        width: 100%;
-        padding: 10px;
-        margin: 5px 0;
-        font-size: 16px;
-        box-sizing: border-box;
-    }
-
-    button, .back-btn {
-        width: 100%;
-        padding: 10px;
-        margin: 5px 0;
-        font-size: 16px;
-        box-sizing: border-box;
-        background: #4CAF50;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        text-align: center;
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-    }
-    .expense-btn {
-        background: #f44336;
-    }
-
-    button:hover, .back-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 10px rgba(0,0,0,0.2);
-    }
-
-    button:active, .back-btn:active {
-        transform: translateY(1px);
-        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    }
-
-    .modal-header-controls {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-    }
-
-    .modal-header-controls .expense-btn {
-        margin-left: 10px;
-    }
-
-    .back-btn {
-        display: inline-block;
-        width: auto;
-        padding: 8px 12px;
-        margin-bottom: 0;
-    }
-
-    /* 오른쪽 월별 합계 */
-    .right {
-        width: 60%;
-        padding: 20px;
-        font-variant-numeric: tabular-nums; /* 숫자 정렬을 위해 추가 */
-    }
-
-    .right h2 {
-        text-align: center;
-    }
-
-    .month,
-    .yearly-total {
-        display: grid;
-        grid-template-columns: 60px 1fr 1fr auto;
-        gap: 0 10px;
-        align-items: center;
-        padding: 8px;
-        border-bottom: 1px solid #ddd;
-        font-size: 18px;
-    }
-
-    .month {
-        cursor: pointer;
-    }
-
-    .month:hover {
-        background-color: #eee;
-    }
-    
-    /* 수입/지출은 가운데 정렬 */
-    .month > span:nth-child(2),
-    .month > span:nth-child(3),
-    .yearly-total > span:nth-child(2),
-    .yearly-total > span:nth-child(3) {
-        text-align: center;
-    }
-
-    /* 월, 합계는 각자의 위치 유지 */
-    .month > span:first-child,
-    .yearly-total > span:first-child {
-        text-align: left;
-    }
-    .month > span:last-child,
-    .yearly-total > span:last-child {
-        text-align: right;
-    }
-
-    .total {
-        font-weight: bold;
-    }
-    
-    .yearly-total {
-        margin-top: 10px;
-        border-top: 2px solid #333;
-        font-size: 20px;
-        font-weight: bold;
-        background-color: #e8e8e8;
-        border-bottom: none;
-    }
-
-    /* 모달 스타일 */
-    .modal {
-        display: none; 
-        position: fixed; 
-        z-index: 1; 
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        overflow: auto;
-        background-color: rgba(0,0,0,0.4);
-    }
-
-    .modal-content {
-        background-color: #fefefe;
-        margin: 10% auto;
-        padding: 20px;
-        border: 1px solid #888;
-        width: 80%;
-        max-width: 600px;
-    }
-
-    .close {
-        color: #aaa;
-        float: right;
-        font-size: 28px;
-        font-weight: bold;
-    }
-
-    .close:hover,
-    .close:focus {
-        color: black;
-        text-decoration: none;
-        cursor: pointer;
-    }
-
-    .detail-item {
-        display: grid;
-        grid-template-columns: 1.5fr 1fr 1fr 1.5fr;
-        gap: 10px;
-        align-items: center;
-        padding: 8px 0;
-        border-bottom: 1px solid #eee;
-    }
-    .transaction-item {
-        grid-template-columns: 1fr auto;
-    }
-    .detail-header {
-        font-weight: bold;
-    }
-    .clickable-amount {
-        cursor: pointer;
-        text-decoration: underline;
-    }
-    .clickable-amount:hover {
-        opacity: 0.7;
-    }
-    
-    .detail-item button,
-    .modal-header-controls .expense-btn {
-        padding: 5px 8px;
-        font-size: 12px;
-        width: auto;
-    }
-    
-    /* 반응형 스타일 */
-    @media (max-width: 768px) {
-        body {
-            flex-direction: column;
-            height: auto;
-        }
-
-        .left,
-        .right {
-            width: 100%;
-            box-sizing: border-box;
-            border-right: none;
-        }
-
-        .right {
-            border-top: 2px solid #ddd;
-        }
-        
-        .month,
-        .yearly-total {
-            font-size: 16px;
-            grid-template-columns: 1fr 1fr; /* 2열 레이아웃 */
-            row-gap: 5px;
-        }
-
-        /* 월 제목은 첫 줄 전체 차지 */
-        .month > span:first-child,
-        .yearly-total > span:first-child {
-            grid-column: 1 / -1;
-            text-align: center;
-        }
-        
-        /* 수입/지출은 각 열에서 가운데 정렬 */
-        .month > span:nth-child(2),
-        .yearly-total > span:nth-child(2),
-        .month > span:nth-child(3),
-        .yearly-total > span:nth-child(3) {
-            text-align: center;
-        }
-
-        .month > .total,
-        .yearly-total > .total {
-            grid-column: 1 / -1; /* 합계는 마지막 줄 전체 차지 */
-            text-align: right;
-            padding-top: 5px;
-            margin-top: 5px;
-            border-top: 1px solid #eee;
-        }
-
-        .modal-content {
-            width: 90%;
-            margin: 20% auto;
-            padding: 15px;
-        }
-        
-        .detail-item {
-            grid-template-columns: 1fr 1fr; /* 2열로 변경 */
-            gap: 15px;
-        }
-
-        .detail-item span:nth-child(3) { /* 지출 */
-             grid-column: 2;
-        }
-        .detail-item span:nth-child(4) { /* 합계 */
-            grid-column: 1 / -1; /* 한 줄 전체 차지 */
-            text-align: right;
-            font-size: 18px;
-        }
-    }
-
-</style>
+<title>프리미엄 가계부</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-<div class="left">
-    <h2>가계부 입력</h2>
-    
-    <div class="input-section">
-        <label>날짜</label>
-        <input type="date" id="date">
+<div class="container">
+    <div class="left">
+        <h2><i class="fas fa-wallet"></i> 가계부 입력</h2>
+        
+        <div class="input-section">
+            <label for="date"><i class="fas fa-calendar-alt"></i> 날짜</label>
+            <input type="date" id="date">
+        </div>
+
+        <div class="input-section">
+            <h3><i class="fas fa-arrow-down"></i> 수입</h3>
+            <label for="income-amount">금액</label>
+            <input type="number" id="income-amount" placeholder="수입 금액 입력...">
+            <button class="income-btn" onclick="addTransaction('income')"><i class="fas fa-plus-circle"></i> 수입 추가</button>
+        </div>
+
+        <div class="input-section">
+            <h3><i class="fas fa-arrow-up"></i> 지출</h3>
+            <label for="expense-amount">금액</label>
+            <input type="number" id="expense-amount" placeholder="지출 금액 입력...">
+            <button class="expense-btn" onclick="addTransaction('expense')"><i class="fas fa-minus-circle"></i> 지출 추가</button>
+        </div>
     </div>
-    
-    <hr>
 
-    <div class="input-section">
-        <h3>수입</h3>
-        <label>금액</label>
-        <input type="number" id="income-amount" placeholder="수입 금액">
-        <button onclick="addTransaction('income')">수입 추가</button>
+    <div class="right">
+        <h2><i class="fas fa-chart-line"></i> 월별 요약</h2>
+        <div id="monthList"></div>
     </div>
-
-    <hr>
-
-    <div class="input-section">
-        <h3>지출</h3>
-        <label>금액</label>
-        <input type="number" id="expense-amount" placeholder="지출 금액">
-        <button class="expense-btn" onclick="addTransaction('expense')">지출 추가</button>
-    </div>
-</div>
-
-<div class="right">
-    <h2>월별 합계</h2>
-    <div id="monthList"></div>
 </div>
 
 <!-- 상세내역 모달 -->
 <div id="detailsModal" class="modal">
   <div class="modal-content">
-    <span class="close" onclick="closeModal()">&times;</span>
-    <h3 id="modalTitle"></h3>
+    <div class="modal-header">
+        <h3 id="modalTitle"></h3>
+        <span class="close" onclick="closeModal()">&times;</span>
+    </div>
     <div id="modalBody"></div>
   </div>
 </div>
@@ -332,22 +56,16 @@
     const incomeAmountInput = document.getElementById('income-amount');
     const expenseAmountInput = document.getElementById('expense-amount');
 
-    let data = JSON.parse(localStorage.getItem("household")) || [];
+    let data = JSON.parse(localStorage.getItem("household_premium")) || [];
 
     function setDateToToday() {
         const now = new Date();
-        const year = now.getFullYear();
-        const month = (now.getMonth() + 1).toString().padStart(2, '0');
-        const day = now.getDate().toString().padStart(2, '0');
-        dateInput.value = `${year}-${month}-${day}`;
+        dateInput.value = now.toISOString().substring(0, 10);
     }
 
-    // 페이지를 열 때, 그리고 다른 탭에 갔다가 돌아올 때 날짜를 오늘로 설정합니다.
     setDateToToday();
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            setDateToToday();
-        }
+        if (document.visibilityState === 'visible') setDateToToday();
     });
 
     incomeAmountInput.addEventListener('keydown', e => e.key === 'Enter' && addTransaction('income'));
@@ -361,7 +79,7 @@
         if (amount <= 0) { alert("금액은 0보다 커야 합니다."); return; }
 
         data.push({ id: Date.now(), date, type, amount });
-        localStorage.setItem("household", JSON.stringify(data));
+        localStorage.setItem("household_premium", JSON.stringify(data));
 
         const amountInput = type === 'income' ? incomeAmountInput : expenseAmountInput;
         amountInput.value = "";
@@ -369,13 +87,11 @@
 
         render();
     }
-    
+
     function deleteData(id, date, type, month) {
         if(!confirm("이 항목을 삭제하시겠습니까?")) return;
-
         data = data.filter(item => item.id !== id);
-        localStorage.setItem("household", JSON.stringify(data));
-        
+        localStorage.setItem("household_premium", JSON.stringify(data));
         render();
         showTransactionDetails(date, type, month);
     }
@@ -383,11 +99,8 @@
     function deleteAllTransactions(date, type, month) {
         const typeText = type === 'income' ? '수입' : '지출';
         if (!confirm(`${date}의 모든 ${typeText} 내역을 삭제하시겠습니까?`)) return;
-
-        const idsToDelete = data.filter(item => item.date === date && item.type === type).map(item => item.id);
-        data = data.filter(item => !idsToDelete.includes(item.id));
-        localStorage.setItem("household", JSON.stringify(data));
-
+        data = data.filter(item => !(item.date === date && item.type === type));
+        localStorage.setItem("household_premium", JSON.stringify(data));
         render();
         showDetails(month);
     }
@@ -395,20 +108,14 @@
     function deleteMonthlyData(month, type) {
         const typeText = type === 'income' ? '수입' : '지출';
         if (!confirm(`${month + 1}월의 모든 ${typeText} 내역을 삭제하시겠습니까?`)) return;
-
-        data = data.filter(item => {
-            const itemMonth = new Date(item.date).getMonth();
-            return !(itemMonth === month && item.type === type);
-        });
-
-        localStorage.setItem("household", JSON.stringify(data));
-        
+        data = data.filter(item => !(new Date(item.date).getMonth() === month && item.type === type));
+        localStorage.setItem("household_premium", JSON.stringify(data));
         render();
-        showDetails(month); // 모달을 닫는 대신, 상세 내역을 새로고침합니다.
+        showDetails(month);
     }
 
     function render() {
-        let monthlySummaries = Array(12).fill(null).map(() => ({ income: 0, expense: 0, total: 0 }));
+        let monthlySummaries = Array(12).fill(null).map(() => ({ income: 0, expense: 0 }));
         let totalIncome = 0;
         let totalExpense = 0;
 
@@ -420,37 +127,33 @@
         let html = "";
         for (let i = 0; i < 12; i++) {
             const summary = monthlySummaries[i];
-            summary.total = summary.income - summary.expense;
+            const total = summary.income - summary.expense;
             totalIncome += summary.income;
             totalExpense += summary.expense;
-            
-            const totalColor = summary.total < 0 ? 'red' : 'black';
+            const totalColor = total < 0 ? 'var(--danger-color)' : 'var(--text-color)';
 
             html += `<div class="month" onclick="showDetails(${i})">
                         <span>${i + 1}월</span>
-                        <span style="color:blue;">+${summary.income.toLocaleString()}</span>
-                        <span style="color:red;">-${summary.expense.toLocaleString()}</span>
-                        <span class="total" style="color:${totalColor};">= ${summary.total.toLocaleString()} 원</span>
+                        <span class="income-text">+${summary.income.toLocaleString()}</span>
+                        <span class="expense-text">-${summary.expense.toLocaleString()}</span>
+                        <span class="total-text" style="color:${totalColor};">${total.toLocaleString()} 원</span>
                      </div>`;
         }
 
         const grandTotal = totalIncome - totalExpense;
-        const grandTotalColor = grandTotal < 0 ? 'red' : 'black';
+        const grandTotalColor = grandTotal < 0 ? 'var(--danger-color)' : 'var(--text-color)';
         html += `<div class="yearly-total">
-                     <span>총합계</span>
-                     <span style="color:blue;">+${totalIncome.toLocaleString()}</span>
-                     <span style="color:red;">-${totalExpense.toLocaleString()}</span>
-                     <span class="total" style="color:${grandTotalColor};">= ${grandTotal.toLocaleString()} 원</span>
+                     <span><i class="fas fa-globe-asia"></i> 총계</span>
+                     <span class="income-text">+${totalIncome.toLocaleString()}</span>
+                     <span class="expense-text">-${totalExpense.toLocaleString()}</span>
+                     <span class="total-text" style="color:${grandTotalColor};">${grandTotal.toLocaleString()} 원</span>
                   </div>`;
 
         document.getElementById("monthList").innerHTML = html;
     }
-    
+
     function showDetails(month) {
         const monthData = data.filter(item => new Date(item.date).getMonth() === month);
-        const hasIncome = monthData.some(item => item.type === 'income');
-        const hasExpense = monthData.some(item => item.type === 'expense');
-
         const dailySummary = {};
         monthData.forEach(item => {
             if (!dailySummary[item.date]) {
@@ -459,81 +162,65 @@
             dailySummary[item.date][item.type] += item.amount;
         });
 
-        const modalTitle = document.getElementById("modalTitle");
-        const modalBody = document.getElementById("modalBody");
-        modalTitle.innerText = `${month + 1}월 상세 내역`;
+        document.getElementById("modalTitle").innerHTML = `<i class="far fa-calendar-check"></i> ${month + 1}월 상세 내역`;
 
-        let headerHtml = `<div class="modal-header-controls" style="justify-content: flex-end; margin-bottom: 20px;">`;
-        if (hasIncome) {
-            headerHtml += `<button class="expense-btn" style="background-color: #1E90FF;" onclick="deleteMonthlyData(${month}, 'income')">이 달의 모든 수입 삭제</button>`;
-        }
-        if (hasExpense) {
-            headerHtml += `<button class="expense-btn" onclick="deleteMonthlyData(${month}, 'expense')">이 달의 모든 지출 삭제</button>`;
-        }
+        let headerHtml = `<div class="modal-header-controls">`;
+        if (monthData.some(i => i.type === 'income')) headerHtml += `<button class="btn income-btn" onclick="deleteMonthlyData(${month}, 'income')"><i class="fas fa-trash-alt"></i> 이 달의 모든 수입 삭제</button>`;
+        if (monthData.some(i => i.type === 'expense')) headerHtml += `<button class="btn expense-btn" onclick="deleteMonthlyData(${month}, 'expense')"><i class="fas fa-trash-alt"></i> 이 달의 모든 지출 삭제</button>`;
         headerHtml += `</div>`;
 
         let bodyHtml = `<div class="detail-item detail-header">
-                          <span>날짜</span>
-                          <span style="text-align:center;">수입</span>
-                          <span style="text-align:center;">지출</span>
-                          <span style="text-align:right;">일일 합계</span>
+                          <span>날짜</span><span>수입</span><span>지출</span><span style="text-align:right;">일일 합계</span>
                       </div>`;
 
         const sortedDates = Object.keys(dailySummary).sort();
-
         if (sortedDates.length === 0) {
-            bodyHtml = "<p>해당 월의 데이터가 없습니다.</p>";
+            bodyHtml += "<p style='text-align:center; padding: 20px;'>해당 월의 데이터가 없습니다.</p>";
         } else {
             sortedDates.forEach(date => {
                 const day = dailySummary[date];
                 const total = day.income - day.expense;
-                const totalColor = total < 0 ? 'red' : 'black';
+                const totalColor = total < 0 ? 'var(--danger-color)' : 'var(--text-color)';
                 bodyHtml += `<div class="detail-item">
                                 <span>${date}</span>
-                                <span style="color:blue; text-align:center;" class="clickable-amount" onclick="showTransactionDetails('${date}', 'income', ${month})">+${day.income.toLocaleString()}원</span>
-                                <span style="color:red; text-align:center;" class="clickable-amount" onclick="showTransactionDetails('${date}', 'expense', ${month})">-${day.expense.toLocaleString()}원</span>
+                                <span class="income-text clickable-amount" onclick="showTransactionDetails('${date}', 'income', ${month})">${day.income.toLocaleString()}원</span>
+                                <span class="expense-text clickable-amount" onclick="showTransactionDetails('${date}', 'expense', ${month})">${day.expense.toLocaleString()}원</span>
                                 <span style="font-weight:bold; text-align:right; color:${totalColor};">${total.toLocaleString()}원</span>
                              </div>`;
             });
         }
         
-        if (hasIncome || hasExpense) {
-            modalBody.innerHTML = headerHtml + bodyHtml;
-        } else {
-            modalBody.innerHTML = bodyHtml;
-        }
-        
+        document.getElementById("modalBody").innerHTML = headerHtml + bodyHtml;
         document.getElementById("detailsModal").style.display = "block";
     }
 
     function showTransactionDetails(date, type, month) {
         const transactions = data.filter(item => item.date === date && item.type === type);
-        const modalTitle = document.getElementById("modalTitle");
-        const modalBody = document.getElementById("modalBody");
         const typeText = type === 'income' ? '수입' : '지출';
+        const typeIcon = type === 'income' ? 'fa-arrow-down' : 'fa-arrow-up';
 
-        modalTitle.innerText = `${date} ${typeText} 내역`;
+        document.getElementById("modalTitle").innerHTML = `<i class="fas ${typeIcon}"></i> ${date} ${typeText} 내역`;
 
         let bodyHtml = `<div class="modal-header-controls">
-                            <div class="back-btn" onclick="showDetails(${month})">⮜ 뒤로가기</div>
-                            <button class="expense-btn" onclick="deleteAllTransactions('${date}', '${type}', ${month})">전체 삭제</button>
+                            <button class="btn back-btn" onclick="showDetails(${month})"><i class="fas fa-chevron-left"></i> 뒤로가기</button>
+                            <button class="btn expense-btn" onclick="deleteAllTransactions('${date}', '${type}', ${month})"><i class="fas fa-dumpster-fire"></i> 전체 삭제</button>
                         </div>
-                        <div class="detail-item transaction-item detail-header">
-                            <span>금액</span><span></span>
+                        <div class="detail-item detail-header">
+                            <span>금액</span><span style="grid-column: 4 / 5; text-align:right;">삭제</span>
                         </div>`;
 
         if (transactions.length === 0) {
-            bodyHtml += "<p>해당 내역이 없습니다.</p>";
+            bodyHtml += "<p style='text-align:center; padding: 20px;'>해당 내역이 없습니다.</p>";
         } else {
             transactions.forEach(item => {
-                bodyHtml += `<div class="detail-item transaction-item">
-                                <span style="font-weight:bold;">${item.amount.toLocaleString()}원</span>
-                                <button class="expense-btn" onclick="deleteData(${item.id}, '${date}', '${type}', ${month})">삭제</button>
+                bodyHtml += `<div class="detail-item">
+                                <span style="font-weight:bold; grid-column: 1 / 4;">${item.amount.toLocaleString()}원</span>
+                                <button class="btn expense-btn" style="padding: 5px 10px; justify-self: end;" onclick="deleteData(${item.id}, '${date}', '${type}', ${month})"><i class="fas fa-trash"></i></button>
                              </div>`;
             });
         }
 
-        modalBody.innerHTML = bodyHtml;
+        document.getElementById("modalBody").innerHTML = bodyHtml;
     }
     
     function closeModal() {
